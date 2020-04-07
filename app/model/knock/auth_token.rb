@@ -58,6 +58,8 @@ module Knock
       return unless verify_lifetime?
 
       if Knock.token_lifetime.is_a?(Hash)
+        return if Knock.token_lifetime[entity_class_name].nil?
+
         Knock.token_lifetime[entity_class_name].from_now.to_i
       else
         Knock.token_lifetime.from_now.to_i
