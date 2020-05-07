@@ -1,12 +1,17 @@
+# frozen_string_literal: true
+
 require "jwt"
 
 module Knock
+  # THIS CLASS IS A MONKEY PATCH FROM THE KNOCK GEM
+  # It enables us to have a default token duration and fixes a problem in the master branch
+  # where it was not possible to have hash of token_lifetime where one of the values was null
   class AuthToken
     attr_reader :token
     attr_reader :payload
     attr_reader :entity_class_name
 
-    def initialize(payload: {}, token: nil, verify_options: {}, entity_class_name: nil)
+    def initialize(payload: {}, token: nil, verify_options: {}, entity_class_name: :default)
       @entity_class_name = entity_class_name
       if token.present?
         @payload, _ = JWT.decode token.to_s, decode_key, true, options.merge(verify_options)
@@ -58,8 +63,6 @@ module Knock
       return unless verify_lifetime?
 
       if Knock.token_lifetime.is_a?(Hash)
-        return if Knock.token_lifetime[entity_class_name].nil?
-
         Knock.token_lifetime[entity_class_name].from_now.to_i
       else
         Knock.token_lifetime.from_now.to_i
@@ -67,6 +70,8 @@ module Knock
     end
 
     def verify_lifetime?
+      return !Knock.token_lifetime[entity_class_name].nil? if entity_class_name.present?
+
       !Knock.token_lifetime.nil?
     end
 
